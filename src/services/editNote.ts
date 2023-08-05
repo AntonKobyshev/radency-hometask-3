@@ -12,17 +12,18 @@ export const notesEditionBodySchema = object({
 
 const editNote: RequestHandler = (req, res) => {
   try {
-    const note = new Note(req.params.id);
+    const id = req.params.id;
+    const note = new Note(id);
 
     Object.assign(note, req.body);
 
     note.save();
-    res.end(); 
+    res.status(200).json({ message: `Note with id ${id} successfully modified.` }).end(); 
   } catch (e) {
     if (e instanceof InvalidNoteIdError) {
-      res.status(404).end();
+      res.status(404).json({ message: `Validation error.` }).end();
     } else {
-      res.status(500).end();
+      res.status(500).json({ message: `Something goes wrong!` }).end();
       throw e;
     }
   }

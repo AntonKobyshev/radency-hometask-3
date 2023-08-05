@@ -1,5 +1,5 @@
-import { RequestHandler } from 'express';
-import Note, { InvalidNoteIdError } from '../repositories/Note';
+import { RequestHandler } from "express";
+import Note, { InvalidNoteIdError } from "../repositories/Note";
 
 const getNote: RequestHandler = (req, res) => {
   try {
@@ -17,10 +17,11 @@ const getNote: RequestHandler = (req, res) => {
     if (e instanceof InvalidNoteIdError) {
       res.status(404).end();
     } else {
-      res.status(500).json({ message: 'Internal server error.' });
+      res.status(500).json({ message: "Internal server error." });
       throw e;
     }
   }
+  res.end();
 };
 
 export default getNote;

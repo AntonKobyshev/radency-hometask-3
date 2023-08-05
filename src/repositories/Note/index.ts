@@ -1,48 +1,68 @@
-import crypto from "crypto";
-import Category from "../Category";
-import { InvalidNoteIdError } from "./errors";
-import { notesData, NoteData } from "./data";
+import crypto from 'crypto';
+import Category from '../Category';
+import { InvalidNoteIdError } from './errors';
+import { notesData, type NoteData } from './data';
 
 export default class Note implements NoteData {
-  public name: NoteData["name"];
-  public content: NoteData["content"];
-  public isArchived: NoteData["isArchived"];
-  public categoryId: NoteData["categoryId"];
+  static getAll() {
+    return notesData.map(
+      (noteData) =>
+        new Note(
+          noteData.name,
+          noteData.content,
+          noteData.categoryId,
+          noteData.isArchived,
+          noteData
+        )
+    );
+  }
 
-  private noteData: NoteData | null;
-
-  constructor(
-    idOrData: Note["id"] | NoteData,
-    name?: NoteData["name"],
-    content?: NoteData["content"],
-    categoryId?: NoteData["categoryId"],
-    isArchived?: NoteData["isArchived"]
-  ) {
-    this.name = "";
-    this.content = "";
-    this.categoryId = "";
+  public constructor(id: Note['id']);
+  public constructor(
+    name: Note['name'],
+    content: Note['content'],
+    categoryId: NoteData['categoryId']
+  );
+  public constructor(
+    name: Note['name'],
+    content: Note['content'],
+    categoryId: NoteData['categoryId'],
+    isArchived: NoteData['isArchived'],
+    noteData: NoteData
+  );
+  public constructor(noteData: NoteData);
+  public constructor(...args: any[]) {
+    this.name = '';
+    this.content = '';
+    this.categoryId = '';
     this.noteData = null;
     this.isArchived = false;
 
-    if (typeof idOrData === "string") {
-      this.name = name || "";
-      this.content = content || "";
-      this.categoryId = categoryId || "";
-      this.isArchived = !!isArchived;
-      this.save();
+    if (args.length === 3) {
+      this.name = args[0];
+      this.content = args[1];
+      this.categoryId = args[2];
+    } else if (args.length === 5) {
+      this.name = args[0];
+      this.content = args[1];
+      this.categoryId = args[2];
+      this.isArchived = args[3];
+      this.noteData = args[4];
     } else {
-      this.setNoteData(idOrData);
+      const noteData =
+        notesData.find((noteData) => noteData.id === args[0]) || null;
+
+      if (noteData === null) throw new InvalidNoteIdError(args[0]);
+
+      this.setNoteData(noteData);
     }
   }
 
-  static getAll(): Note[] {
-    return notesData.map((noteData) => new Note(noteData));
-  }
+  public save() {
+    new Category(this.categoryId); // to check if the categoryId is valid
 
-  public save(): void {
-    new Category(this.categoryId);
     if (this.noteData === null) {
-      const newNoteData: NoteData = {
+      this.noteData = {
         id: crypto.randomUUID(),
         name: this.name,
         content: this.content,
@@ -50,54 +70,49 @@ export default class Note implements NoteData {
         creationDate: new Date(),
         isArchived: false,
       };
-      this.noteData = newNoteData;
-      notesData.push(newNoteData);
+      notesData.push(this.noteData);
     } else {
       this.assignProperties(this.noteData, this);
     }
   }
-
-  public delete(): void {
+  public delete() {
     if (this.noteData !== null) {
-      const index = notesData.indexOf(this.noteData);
-      if (index !== -1) {
-        notesData.splice(index, 1);
-      }
+      notesData.splice(notesData.indexOf(this.noteData), 1);
       this.noteData = null;
     }
   }
 
   public get id(): string {
-    if (!this.noteData) {
-      throw new Error("Unable to get the id of a not saved note");
-    }
-    return this.noteData.id;
+    if (this.noteData === null)
+      throw new Error('Unable to get the id of a not saved note');
+    return this.noteData?.id;
   }
-
-  public get creationDate(): Date {
-    if (!this.noteData) {
-      throw new Error("Unable to get the creation date of a not saved note");
-    }
+  public name: NoteData['name'];
+  public content: NoteData['content'];
+  public isArchived: NoteData['isArchived'];
+  public categoryId: NoteData['categoryId'];
+  public get creationDate() {
+    if (this.noteData === null)
+      throw new Error('Unable to get the creation date of a not saved note');
     return this.noteData.creationDate;
   }
-
-  public get category(): Category {
+  public get category() {
     return new Category(this.categoryId);
   }
 
-  private setNoteData(noteData: NoteData): void {
+  private noteData: NoteData | null;
+  private setNoteData(noteData: NoteData) {
     this.noteData = noteData;
     this.assignProperties(this, noteData);
   }
-
   private assignProperties(
-    target: Partial<NoteData>,
-    source: Partial<NoteData>
-  ): void {
-    target.name = source.name || "";
-    target.content = source.content || "";
-    target.categoryId = source.categoryId || "";
-    target.isArchived = !!source.isArchived;
+    target: Omit<NoteData, 'id' | 'creationDate'>,
+    source: Omit<NoteData, 'id' | 'creationDate'>
+  ) {
+    target.name = source.name;
+    target.content = source.content;
+    target.categoryId = source.categoryId;
+    target.isArchived = source.isArchived;
   }
 }
 
