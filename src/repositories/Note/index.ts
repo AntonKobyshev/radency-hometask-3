@@ -59,7 +59,7 @@ export default class Note implements NoteData {
   }
 
   public save() {
-    new Category(this.categoryId); // to check if the categoryId is valid
+    new Category(this.categoryId);
 
     if (this.noteData === null) {
       this.noteData = {
