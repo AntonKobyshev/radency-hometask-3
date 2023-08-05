@@ -12,6 +12,7 @@ export default function generateValidationMiddleware(
     } catch (e) {
       if (e instanceof ValidationError) {
         res.status(400).json({
+          message: 'Validation error',
           errors: e.errors,
         });
       } else {

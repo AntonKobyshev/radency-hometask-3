@@ -16,13 +16,12 @@ const createNote: RequestHandler = (req, res) => {
   try {
     const note = new Note(req.body.name, req.body.content, req.body.categoryId);
     note.save();
-    res.json({ id: note.id });
+    res.status(200).json({ message: `The note was created, with id: ${note.id}`});
   } catch (e) {
     if (e instanceof InvalidCategoryIdError)
       res.status(400).json({ message: 'Invalid category id.' });
     else throw e;
   }
-  res.end();
 };
 
 export default createNote;
